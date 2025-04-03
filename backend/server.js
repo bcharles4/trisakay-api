@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import passengerRoutes from '../routes/passenger.routes.js';
 import driverRoutes from '../routes/driver.routes.js';
 import { connectDB } from './config/db.js';
@@ -6,6 +7,13 @@ import { connectDB } from './config/db.js';
 const app = express();
 app.use(express.json());
 connectDB();
+
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
 
 
 // Routes
