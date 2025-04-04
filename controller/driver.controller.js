@@ -109,9 +109,14 @@ export const updateBookingStatus = async (req, res) => {
 
 
 // Get All Drivers
-export const getAllDrivers = async (req, res) => {
+// Get Available Drivers
+export const getAvailableDrivers = async (req, res) => {
     try {
-        const drivers = await Driver.find({}, '-password'); // Exclude password for security
+        // Find drivers who don't have any pending bookings
+        const drivers = await Driver.find({
+            "receivedBooking.status": { $ne: "Pending" }
+        }).select('-password');
+        
         res.status(200).json({ drivers });
     } catch (error) {
         res.status(500).json({ message: error.message });

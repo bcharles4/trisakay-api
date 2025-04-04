@@ -58,17 +58,26 @@ export const loginPassenger = async (req, res) => {
     }
 };
 
-// Create Booking and Send to Driver
+
+
+
 export const createBooking = async (req, res) => {
     try {
-        const { passengerId, driverId, name, from, to, fair, message } = req.body;
+        const { passengerId, name, from, to, fair, message } = req.body;
 
-        // Find passenger and driver
+        // Find passenger
         const passenger = await Passenger.findById(passengerId);
-        const driver = await Driver.findById(driverId);
+        if (!passenger) {
+            return res.status(404).json({ message: "Passenger not found" });
+        }
 
-        if (!passenger || !driver) {
-            return res.status(404).json({ message: "Passenger or Driver not found" });
+        // Find first available driver
+        const driver = await Driver.findOne({
+            "receivedBooking.status": { $ne: "Pending" }
+        });
+        
+        if (!driver) {
+            return res.status(404).json({ message: "No available drivers" });
         }
 
         // Create booking object
@@ -78,24 +87,33 @@ export const createBooking = async (req, res) => {
             to,
             fair,
             message,
-            status: "Pending"
+            status: "Pending",
+            passengerId: passengerId,
+            bookingId: new mongoose.Types.ObjectId() // Generate unique ID for the booking
         };
 
-        // Add booking to passenger's bookings
+        // Add to passenger's bookings
         passenger.booking.push(booking);
         await passenger.save();
 
-        // Add booking to driver's received bookings
-        driver.receivedBooking.push({
-            from,
-            to,
-            fair,
-            message,
-            status: "Pending"
-        });
+        // Add to driver's received bookings
+        const driverBooking = {
+            ...booking,
+            passengerName: passenger.name,
+            passengerPhone: passenger.phone
+        };
+        driver.receivedBooking.push(driverBooking);
         await driver.save();
 
-        res.status(201).json({ message: "Booking created and sent to driver successfully", booking });
+        res.status(201).json({ 
+            message: "Booking created and sent to driver successfully", 
+            booking: driverBooking,
+            driver: {
+                name: driver.name,
+                plate: driver.plate,
+                phone: driver.Phone
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
