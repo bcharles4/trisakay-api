@@ -111,7 +111,7 @@ export const updateBookingStatus = async (req, res) => {
 // Get All Drivers
 export const getAllDrivers = async (req, res) => {
     try {
-        const drivers = await Driver.find({}); // Exclude password for security
+        const drivers = await Driver.find({}, '-password'); // Exclude password for security
         res.status(200).json({ drivers });
     } catch (error) {
         res.status(500).json({ message: error.message });
