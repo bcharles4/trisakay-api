@@ -3,7 +3,8 @@ import {
   registerDriver,
   loginDriver,
   getDriverBookings,
-  updateBookingStatus
+  updateBookingStatus,
+  getAllDrivers
 } from '../controller/driver.controller.js';
 
 const router = express.Router();
@@ -11,6 +12,8 @@ const router = express.Router();
 // Driver authentication routes
 router.post('/register', registerDriver);
 router.post('/login', loginDriver);
+router.post('/availableDrivers', getAllDrivers);
+
 
 // Booking management routes
 router.get('/:driverId/bookings', getDriverBookings);
