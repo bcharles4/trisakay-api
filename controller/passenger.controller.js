@@ -17,7 +17,7 @@ export const registerPassenger = async (req, res) => {
             name,
             email,
             phone,
-            password // In a real app, you should never store plain text passwords
+            password 
         });
 
         await newPassenger.save();
@@ -30,10 +30,10 @@ export const registerPassenger = async (req, res) => {
 // Passenger Login
 export const loginPassenger = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { phone, password } = req.body;
 
         // Find passenger by email
-        const passenger = await Passenger.findOne({ email });
+        const passenger = await Passenger.findOne({ phone });
         if (!passenger) {
             return res.status(404).json({ message: "Passenger not found" });
         }
