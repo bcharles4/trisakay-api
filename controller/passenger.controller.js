@@ -89,7 +89,6 @@ export const createBooking = async (req, res) => {
             message,
             status: "Pending",
             passengerId: passengerId,
-            bookingId: new mongoose.Types.ObjectId() // Generate unique ID for the booking
         };
 
         // Add to passenger's bookings
