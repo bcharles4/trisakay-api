@@ -1,5 +1,6 @@
 import Passenger from "../backend/models/passenger.model.js";
 import Driver from "../backend/models/driver.model.js";
+import mongoose from "mongoose";
 
 // Passenger Registration
 export const registerPassenger = async (req, res) => {
