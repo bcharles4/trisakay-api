@@ -61,54 +61,74 @@ export const loginPassenger = async (req, res) => {
 
 
 
+// Create Booking
+// This function creates a booking for a passenger and assigns it to an available driver.
 export const createBooking = async (req, res) => {
     try {
-        const { passengerId, name, from, to, fair, message } = req.body;
+        const { passengerId, name, from, to, fare, message } = req.body;
 
-        // Basic validation
-        if (!passengerId || !from || !to) {
-            return res.status(400).json({ message: "Missing required fields" });
+        // 1. Find passenger
+        const passenger = await Passenger.findOne({ passengerId: Number(passengerId) });
+        if (!passenger) {
+            return res.status(404).json({ message: "Passenger not found" });
         }
 
-        const passenger = await Passenger.findById(passengerId);
-        if (!passenger) return res.status(404).json({ message: "Passenger not found" });
+        // 2. Find available driver (NOT currently having a pending booking)
+        const driver = await Driver.findOne({
+            $or: [
+                { receiveBooking: { $exists: false } }, // No bookings at all
+                { receiveBooking: { $size: 0 } }, // Empty bookings array
+                { 
+                    "receiveBooking.status": { 
+                        $not: { $eq: "Pending" } 
+                    } 
+                }
+            ]
+        });
 
-        // Find any driver without pending bookings
-        const driver = await Driver.findOne({ "receivedBooking.status": { $ne: "Pending" } });
-        if (!driver) return res.status(404).json({ message: "No available drivers" });
+        if (!driver) {
+            return res.status(404).json({ message: "All drivers are currently busy" });
+        }
 
-        const booking = {
+        // 3. Create booking
+        const newBooking = {
             name: name || passenger.name,
             from,
             to,
-            fair: fair || 0,
+            fare: fare || 0,
             message: message || "",
             status: "Pending",
-            passengerId
+            driverId: driver._id,
+            createdAt: new Date() // Track when booking was created
         };
 
-        // Update passenger and driver
-        passenger.booking.push(booking);
+        // 4. Update records
+        passenger.bookings.push(newBooking);
         await passenger.save();
 
-        driver.receivedBooking.push({
-            ...booking,
+        driver.receiveBooking.push({
+            ...newBooking,
+            passengerId: passenger.passengerId,
             passengerName: passenger.name,
             passengerPhone: passenger.phone
         });
         await driver.save();
 
         return res.status(201).json({ 
-            message: "Booking created successfully",
-            booking,
+            message: "Booking request sent to driver",
+            booking: newBooking,
             driver: {
                 name: driver.name,
-                plate: driver.plate,
-                phone: driver.phone
+                phone: driver.phone,
+                plate: driver.plate
             }
         });
 
     } catch (error) {
-        return res.status(500).json({ message: "Server error", error: error.message });
+        console.error("Booking error:", error);
+        return res.status(500).json({ 
+            message: "Server error",
+            error: error.message 
+        });
     }
 };
