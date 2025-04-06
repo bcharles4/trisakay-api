@@ -3,7 +3,7 @@ import Driver from '../backend/models/driver.model.js';
 // Driver Registration
 export const registerDriver = async (req, res) => {
     try {
-        const { name, email, address, license, plate, password, Phone } = req.body;
+        const { name, email, address, license, plate, password, phone } = req.body;
 
         // Check if driver already exists
         const existingDriver = await Driver.findOne({ email });
@@ -19,7 +19,7 @@ export const registerDriver = async (req, res) => {
             license,
             plate,
             password, // In a real app, you should never store plain text passwords
-            Phone
+            phone
         });
 
         await newDriver.save();

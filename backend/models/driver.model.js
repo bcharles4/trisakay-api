@@ -11,7 +11,7 @@ const driverSchema = new mongoose.Schema({
     license: { type: String, required: true },
     plate: { type: String, required: true },
     password: { type: String, required: true },
-    Phone: { 
+    phone: { 
         type: String, 
         required: true,
         match: [/^\d{11}$/, "Phone number must be exactly 11 digits"]
