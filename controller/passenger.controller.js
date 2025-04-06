@@ -48,7 +48,7 @@ export const loginPassenger = async (req, res) => {
         res.status(200).json({ 
             message: "Login successful", 
             passenger: {
-                _id: passenger._id,
+                passengerId: passenger.passengerId,
                 name: passenger.name,
                 email: passenger.email,
                 phone: passenger.phone
