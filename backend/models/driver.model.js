@@ -9,7 +9,7 @@ const driverSchema = new mongoose.Schema({
     email: { type: String, required: false, unique: true },
     address: { type: String, required: true },
     license: { type: String, required: true },
-    plate: { type: String, required: true },
+    plateNumber: { type: String, required: true },
     password: { type: String, required: true },
     phone: { 
         type: String, 
