@@ -48,7 +48,7 @@ export const loginPassenger = async (req, res) => {
         res.status(200).json({ 
             message: "Login successful", 
             passenger: {
-                passengerId: passenger.passengerId,
+                _id: passenger._id,
                 name: passenger.name,
                 email: passenger.email,
                 phone: passenger.phone
@@ -63,25 +63,22 @@ export const loginPassenger = async (req, res) => {
 
 // Create Booking
 // This function creates a booking for a passenger and assigns it to an available driver.
+// Create Booking
 export const createBooking = async (req, res) => {
     try {
         const { passengerId, name, from, to, fare, message } = req.body;
 
-        // 1. Find passenger using NUMERIC passengerId
-        const passenger = await Passenger.findOne({ passengerId: Number(passengerId) });
+        // 1. Find passenger using _id instead of passengerId
+        const passenger = await Passenger.findById(passengerId);
         if (!passenger) {
             return res.status(404).json({ message: "Passenger not found" });
         }
 
-        // 2. Find available driver (using native _id)
+        // 2. Find available driver
         const driver = await Driver.findOne({
-            // Only if you have this field:
-            // isAvailable: true,
             receiveBooking: { $not: { $elemMatch: { status: "Pending" } } }
         });
 
-
-        
         if (!driver) {
             return res.status(404).json({ message: "No available drivers" });
         }
@@ -94,7 +91,7 @@ export const createBooking = async (req, res) => {
             fare: fare || 0,
             message: message || "",
             status: "Pending",
-            driverId: driver._id  // Using native _id here
+            driverId: driver._id  // Storing driver's _id
         };
 
         // 4. Update both records
@@ -103,7 +100,7 @@ export const createBooking = async (req, res) => {
 
         driver.receivedBooking.push({
             ...newBooking,
-            passengerId: passenger.passengerId,  // Using numeric ID
+            passengerId: passenger._id,  // Now using MongoDB's _id
             passengerName: passenger.name,
             passengerPhone: passenger.phone
         });
