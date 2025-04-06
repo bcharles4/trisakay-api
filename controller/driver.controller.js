@@ -11,14 +11,13 @@ export const registerDriver = async (req, res) => {
             return res.status(400).json({ message: "Driver already exists" });
         }
 
-        // Create new driver (password stored in plain text - not recommended for production)
         const newDriver = new Driver({
             name,
             email,
             address,
             license,
             plate,
-            password, // In a real app, you should never store plain text passwords
+            password,
             phone
         });
 
