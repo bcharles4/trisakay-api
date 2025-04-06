@@ -64,107 +64,62 @@ export const loginPassenger = async (req, res) => {
 // Create Booking
 // This function creates a booking for a passenger and assigns it to an available driver.
 // Create Booking
-// Create Booking based on Passenger Name
 export const createBooking = async (req, res) => {
     try {
-        const { name, from, to, fare, message } = req.body;
+        const { passengerId, name, from, to, fare, message } = req.body;
 
-        // Validate required fields
-        if (!name || !from || !to) {
-            return res.status(400).json({ 
-                message: "Name, from, and to are required fields" 
-            });
+        // 1. Find passenger using _id instead of passengerId
+        const passenger = await Passenger.findById(passengerId);
+        if (!passenger) {
+            return res.status(404).json({ message: "Passenger not found" });
         }
 
-        // 1. Find passenger by name (case insensitive)
-        const passenger = await Passenger.findOne({ 
-            name: { $regex: new RegExp(`^${name}$`, 'i') }
+        // 2. Find available driver
+        const driver = await Driver.findOne({
+            receiveBooking: { $not: { $elemMatch: { status: "Pending" } } }
         });
 
-        if (!passenger) {
-            return res.status(404).json({ 
-                message: "Passenger not found. Please check the name or register first." 
-            });
-        }
-
-        // 2. Find available driver (not currently handling any pending bookings)
-        const driver = await Driver.findOne({
-            $or: [
-                { receiveBooking: { $size: 0 } },
-                { receiveBooking: { $not: { $elemMatch: { status: "Pending" } } } }
-            ]
-        }).sort({ receiveBooking: 1 }); // Prefer drivers with fewer bookings
-
         if (!driver) {
-            return res.status(404).json({ 
-                message: "No available drivers at the moment. Please try again later." 
-            });
+            return res.status(404).json({ message: "No available drivers" });
         }
 
-        // 3. Create booking with auto-incremented ID
-        const bookingCount = passenger.bookings.length;
+        // 3. Create booking
         const newBooking = {
-            bookingId: bookingCount + 1,
-            name: passenger.name, // Always use registered passenger name
+            name: name || passenger.name,
             from,
             to,
             fare: fare || 0,
             message: message || "",
             status: "Pending",
-            driverId: driver._id,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            driverId: driver._id  // Storing driver's _id
         };
 
-        // 4. Update records in a transaction
-        const session = await mongoose.startSession();
-        session.startTransaction();
+        // 4. Update both records
+        passenger.bookings.push(newBooking);
+        await passenger.save();
 
-        try {
-            // Add to passenger's bookings
-            passenger.bookings.push(newBooking);
-            await passenger.save({ session });
+        driver.receivedBooking.push({
+            ...newBooking,
+            passengerId: passenger._id,  // Now using MongoDB's _id
+            passengerName: passenger.name,
+            passengerPhone: passenger.phone
+        });
+        await driver.save();
 
-            // Add to driver's received bookings
-            driver.receiveBooking.push({
-                ...newBooking,
-                passengerId: passenger._id,
-                passengerName: passenger.name,
-                passengerPhone: passenger.phone
-            });
-            await driver.save({ session });
-
-            await session.commitTransaction();
-
-            return res.status(201).json({ 
-                message: "Booking created successfully",
-                booking: {
-                    ...newBooking,
-                    bookingId: passenger.passengerId * 1000 + newBooking.bookingId // Generate unique ID
-                },
-                passenger: {
-                    name: passenger.name,
-                    phone: passenger.phone,
-                    email: passenger.email
-                },
-                driver: {
-                    name: driver.name,
-                    phone: driver.phone,
-                    vehicle: driver.plate
-                }
-            });
-
-        } catch (transactionError) {
-            await session.abortTransaction();
-            throw transactionError;
-        } finally {
-            session.endSession();
-        }
+        return res.status(201).json({ 
+            message: "Booking created successfully",
+            booking: newBooking,
+            driver: {
+                name: driver.name,
+                phone: driver.phone,
+                plate: driver.plate
+            }
+        });
 
     } catch (error) {
         console.error("Booking error:", error);
         return res.status(500).json({ 
-            message: "Failed to create booking",
+            message: "Server error",
             error: error.message 
         });
     }
