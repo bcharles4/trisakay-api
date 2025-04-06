@@ -67,27 +67,23 @@ export const createBooking = async (req, res) => {
     try {
         const { passengerId, name, from, to, fare, message } = req.body;
 
-        // 1. Find passenger
+        // 1. Find passenger using NUMERIC passengerId
         const passenger = await Passenger.findOne({ passengerId: Number(passengerId) });
         if (!passenger) {
             return res.status(404).json({ message: "Passenger not found" });
         }
 
-        // 2. Find available driver (NOT currently having a pending booking)
+        // 2. Find available driver (using native _id)
         const driver = await Driver.findOne({
-            $or: [
-                { receiveBooking: { $exists: false } }, // No bookings at all
-                { receiveBooking: { $size: 0 } }, // Empty bookings array
-                { 
-                    "receiveBooking.status": { 
-                        $not: { $eq: "Pending" } 
-                    } 
-                }
-            ]
+            // Only if you have this field:
+            // isAvailable: true,
+            receiveBooking: { $not: { $elemMatch: { status: "Pending" } } }
         });
 
+
+        
         if (!driver) {
-            return res.status(404).json({ message: "All drivers are currently busy" });
+            return res.status(404).json({ message: "No available drivers" });
         }
 
         // 3. Create booking
@@ -98,24 +94,23 @@ export const createBooking = async (req, res) => {
             fare: fare || 0,
             message: message || "",
             status: "Pending",
-            driverId: driver._id,
-            createdAt: new Date() // Track when booking was created
+            driverId: driver._id  // Using native _id here
         };
 
-        // 4. Update records
+        // 4. Update both records
         passenger.bookings.push(newBooking);
         await passenger.save();
 
-        driver.receiveBooking.push({
+        driver.receivedBooking.push({
             ...newBooking,
-            passengerId: passenger.passengerId,
+            passengerId: passenger.passengerId,  // Using numeric ID
             passengerName: passenger.name,
             passengerPhone: passenger.phone
         });
         await driver.save();
 
         return res.status(201).json({ 
-            message: "Booking request sent to driver",
+            message: "Booking created successfully",
             booking: newBooking,
             driver: {
                 name: driver.name,
