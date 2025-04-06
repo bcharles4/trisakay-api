@@ -3,7 +3,7 @@ import Driver from '../backend/models/driver.model.js';
 // Driver Registration
 export const registerDriver = async (req, res) => {
     try {
-        const { name, email, address, license, plate, password, phone } = req.body;
+        const { name, email, address, license, plateNumber, password, phone } = req.body;
 
         // Check if driver already exists
         const existingDriver = await Driver.findOne({ email });
@@ -17,7 +17,7 @@ export const registerDriver = async (req, res) => {
             email,
             address,
             license,
-            plate,
+            plateNumber,
             password,
             phone
         });
