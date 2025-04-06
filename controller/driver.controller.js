@@ -32,10 +32,10 @@ export const registerDriver = async (req, res) => {
 // Driver Login
 export const loginDriver = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { phone, password } = req.body;
 
         // Find driver by email
-        const driver = await Driver.findOne({ email });
+        const driver = await Driver.findOne({ phone });
         if (!driver) {
             return res.status(404).json({ message: "Driver not found" });
         }
@@ -55,7 +55,7 @@ export const loginDriver = async (req, res) => {
                 address: driver.address,
                 license: driver.license,
                 plate: driver.plate,
-                Phone: driver.Phone
+                phone: driver.phone
             }
         });
     } catch (error) {
