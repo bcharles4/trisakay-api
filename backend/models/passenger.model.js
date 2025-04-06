@@ -4,7 +4,7 @@ import AutoIncrementFactory from "mongoose-sequence";
 const AutoIncrement = AutoIncrementFactory(mongoose);
 
 const passengerSchema = new mongoose.Schema({
-    passengerId: { type: Number },
+    passengerId: { type: string },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: {
