@@ -16,21 +16,33 @@ const driverSchema = new mongoose.Schema({
         required: true,
         match: [/^\d{11}$/, "Phone number must be exactly 11 digits"]
     },
+    isAvailable: { type: Boolean, default: true }, // Add this field
     receivedBooking: [
         {
-            from: { type: String, required: true },
-            to: { type: String, required: true },
-            fair: { type: String, required: false },
-            message: { type: String, required: false, default: "Pending" },
-            status: { type: String, required: false, default: "Pending" }, 
-            createdAt: { type: Date, default: Date.now },
-            }
-    ],
-    sessionToken: { type: String, required: false }
+          _id: { type: mongoose.Schema.Types.ObjectId }, // Add this line
+          bookingId: { type: String, required: true },
+          passengerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Passenger' },
+          passengerName: { type: String, required: true },
+          passengerPhone: { type: String, required: true },
+          from: { type: String, required: true },
+          to: { type: String, required: true },
+          fare: { type: String, required: false },
+          message: { type: String, default: "Pending" },
+          status: {
+            type: String,
+            enum: ["Pending", "Accepted", "Rejected", "Completed"],
+            default: "Pending"
+          },
+          createdAt: { type: Date, default: Date.now },
+          acceptedAt: { type: Date },
+          rejectedAt: { type: Date },
+          completedAt: { type: Date }
+        }
+      ],      
+    sessionToken: { type: String }
 }, {
     timestamps: true,
 });
-
 driverSchema.plugin(AutoIncrement, { inc_field: "driverId" });
 
 const Driver = mongoose.model("Driver", driverSchema);
