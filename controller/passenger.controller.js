@@ -73,24 +73,22 @@ export const createBooking = async (req, res) => {
             return res.status(404).json({ message: "Passenger not found" });
         }
 
-        // 2. Find available driver (NOT currently having a pending booking)
-        const driver = await Driver.findOne({
-            $or: [
-                { receiveBooking: { $exists: false } }, // No bookings at all
-                { receiveBooking: { $size: 0 } }, // Empty bookings array
-                { 
-                    "receiveBooking.status": { 
-                        $not: { $eq: "Pending" } 
-                    } 
-                }
-            ]
-        });
-
-        if (!driver) {
-            return res.status(404).json({ message: "All drivers are currently busy" });
+        // 2. Initialize bookings array if it doesn't exist
+        if (!passenger.bookings) {
+            passenger.bookings = [];
         }
 
-        // 3. Create booking
+        // 3. Find available driver
+        const driver = await Driver.findOne({ 
+            isAvailable: true,
+            "receivedBooking.status": { $ne: "Pending" }
+        });
+        
+        if (!driver) {
+            return res.status(404).json({ message: "No available drivers" });
+        }
+
+        // 4. Create booking
         const newBooking = {
             name: name || passenger.name,
             from,
@@ -99,14 +97,19 @@ export const createBooking = async (req, res) => {
             message: message || "",
             status: "Pending",
             driverId: driver._id,
-            createdAt: new Date() // Track when booking was created
+            createdAt: new Date()
         };
 
-        // 4. Update records
+        // 5. Add to passenger's bookings (now guaranteed to be an array)
         passenger.bookings.push(newBooking);
         await passenger.save();
 
-        driver.receiveBooking.push({
+        // 6. Update driver's receivedBooking (ensure it exists too)
+        if (!driver.receivedBooking) {
+            driver.receivedBooking = [];
+        }
+        
+        driver.receivedBooking.push({
             ...newBooking,
             passengerId: passenger.passengerId,
             passengerName: passenger.name,
@@ -115,7 +118,7 @@ export const createBooking = async (req, res) => {
         await driver.save();
 
         return res.status(201).json({ 
-            message: "Booking request sent to driver",
+            message: "Booking created successfully",
             booking: newBooking,
             driver: {
                 name: driver.name,
