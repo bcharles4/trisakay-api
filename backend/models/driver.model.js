@@ -6,7 +6,7 @@ const AutoIncrement = AutoIncrementFactory(mongoose);
 const driverSchema = new mongoose.Schema({ 
     driverId: { type: Number },
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: false, unique: true },
     address: { type: String, required: true },
     license: { type: String, required: true },
     plate: { type: String, required: true },
