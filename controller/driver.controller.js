@@ -170,7 +170,7 @@ export const acceptBooking = async (req, res) => {
             }
         }
 
-        return res.status(200).json({ 
+        return res.status(201).json({ 
             message: "Booking accepted successfully",
             booking: driver.receivedBooking[bookingIndex]
         });
