@@ -127,10 +127,9 @@ export const getAvailableDrivers = async (req, res) => {
 };
 
 
-
 export const acceptBooking = async (req, res) => {
     try {
-        const { driverId, bookingId } = req.body;
+        const { driverId, bookingId, driverMessage } = req.body; // Added driverMessage
 
         if (!driverId || !bookingId) {
             return res.status(400).json({ message: "Driver ID and Booking ID are required" });
@@ -148,15 +147,16 @@ export const acceptBooking = async (req, res) => {
             return res.status(404).json({ message: "Booking not found or already processed" });
         }
 
-        // Update booking status to "Accepted"
+        // Update booking status to "Accepted" and add driver's message
         driver.receivedBooking[bookingIndex].status = "Accepted";
         driver.receivedBooking[bookingIndex].acceptedAt = new Date();
+        driver.receivedBooking[bookingIndex].driverMessage = driverMessage || ""; // Add driver's message
         
         // Mark driver as unavailable
         driver.isAvailable = false;
         await driver.save();
 
-        // Update passenger's booking status
+        // Update passenger's booking status and add driver's message
         const passenger = await Passenger.findById(driver.receivedBooking[bookingIndex].passengerId);
         if (passenger) {
             const passengerBookingIndex = passenger.booking.findIndex(
@@ -165,6 +165,7 @@ export const acceptBooking = async (req, res) => {
             
             if (passengerBookingIndex !== -1) {
                 passenger.booking[passengerBookingIndex].status = "Accepted";
+                passenger.booking[passengerBookingIndex].driverMessage = driverMessage || ""; // Add driver's message
                 await passenger.save();
             }
         }
