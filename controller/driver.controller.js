@@ -127,37 +127,46 @@ export const getAvailableDrivers = async (req, res) => {
 };
 
 
+// Updated acceptBooking endpoint
 export const acceptBooking = async (req, res) => {
     try {
-        const { driverId, bookingId, driverMessage } = req.body; // Added driverMessage
+        const { driverId, bookingId, driverMessage } = req.body;
 
         if (!driverId || !bookingId) {
-            return res.status(400).json({ message: "Driver ID and Booking ID are required" });
+            return res.status(400).json({ 
+                success: false,
+                message: "Driver ID and Booking ID are required" 
+            });
         }
 
         const driver = await Driver.findById(driverId);
-        if (!driver) return res.status(404).json({ message: "Driver not found" });
+        if (!driver) return res.status(404).json({ 
+            success: false,
+            message: "Driver not found" 
+        });
 
-        // Find the booking in driver's received bookings
         const bookingIndex = driver.receivedBooking.findIndex(
             b => b._id.toString() === bookingId && b.status === "Pending"
         );
 
         if (bookingIndex === -1) {
-            return res.status(404).json({ message: "Booking not found or already processed" });
+            return res.status(400).json({ 
+                success: false,
+                message: "Booking not found or already processed" 
+            });
         }
 
-        // Update booking status to "Accepted" and add driver's message
-        driver.receivedBooking[bookingIndex].status = "Accepted";
-        driver.receivedBooking[bookingIndex].acceptedAt = new Date();
-        driver.receivedBooking[bookingIndex].driverMessage = driverMessage || ""; // Add driver's message
+        // Update booking
+        const booking = driver.receivedBooking[bookingIndex];
+        booking.status = "Accepted";
+        booking.acceptedAt = new Date();
+        booking.driverMessage = driverMessage || "";
         
-        // Mark driver as unavailable
         driver.isAvailable = false;
         await driver.save();
 
-        // Update passenger's booking status and add driver's message
-        const passenger = await Passenger.findById(driver.receivedBooking[bookingIndex].passengerId);
+        // Update passenger
+        const passenger = await Passenger.findById(booking.passengerId);
         if (passenger) {
             const passengerBookingIndex = passenger.booking.findIndex(
                 b => b._id.toString() === bookingId
@@ -165,22 +174,26 @@ export const acceptBooking = async (req, res) => {
             
             if (passengerBookingIndex !== -1) {
                 passenger.booking[passengerBookingIndex].status = "Accepted";
-                passenger.booking[passengerBookingIndex].driverMessage = driverMessage || ""; // Add driver's message
+                passenger.booking[passengerBookingIndex].driverMessage = driverMessage || "";
                 await passenger.save();
             }
         }
 
         return res.status(200).json({ 
+            success: true,
             message: "Booking accepted successfully",
-            booking: driver.receivedBooking[bookingIndex]
+            status: "Accepted",
+            booking: booking
         });
 
     } catch (error) {
-        return res.status(500).json({ message: "Server error", error: error.message });
+        return res.status(500).json({ 
+            success: false,
+            message: "Server error",
+            error: error.message 
+        });
     }
 };
-
-
 
 export const rejectBooking = async (req, res) => {
     try {
