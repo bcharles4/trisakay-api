@@ -20,6 +20,7 @@ const passengerSchema = new mongoose.Schema({
         fare: { type: Number, required: false, default: 0 },
         message: { type: String, required: false, default: "" },
         status: { type: String, required: true, default: "Pending" },
+        driverMessage: { type: String, default: "" },
         createdAt: { type: Date, default: Date.now },
         driverId: { type: mongoose.Schema.Types.ObjectId, ref: "Driver" }
     }]

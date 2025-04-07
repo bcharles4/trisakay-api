@@ -28,6 +28,7 @@ const driverSchema = new mongoose.Schema({
           to: { type: String, required: true },
           fare: { type: String, required: false },
           message: { type: String, default: "Pending" },
+          driverMessage: { type: String, default: "" },
           status: {
             type: String,
             enum: ["Pending", "Accepted", "Rejected", "Completed"],
