@@ -130,12 +130,14 @@ export const getAvailableDrivers = async (req, res) => {
 
 export const acceptBooking = async (req, res) => {
     try {
-        const { driverId, bookingId } = req.body;
+        const { driverId, bookingId } = requestData;
+        const requestData = req.body.data || req.body;
+       
 
         if (!driverId || !bookingId) {
             return res.status(400).json({ message: "Driver ID and Booking ID are required" });
         }
-
+        
         const driver = await Driver.findById(driverId);
         if (!driver) return res.status(404).json({ message: "Driver not found" });
 
