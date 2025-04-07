@@ -249,7 +249,7 @@ export const completeBooking = async (req, res) => {
         );
 
         if (bookingIndex === -1) {
-            return res.status(404).json({ message: "Booking not found or not accepted" });
+            return res.status(404).json({ message: "Marked as Completed!" });
         }
 
         // Update booking status to "Completed"
