@@ -27,7 +27,7 @@ export const reportIncident = async (req, res) => {
             imageUrl: imageUrl || null,
             status: "Pending" // Added default status
         });
-
+                                                                                                                              
         await newReport.save();
 
         res.status(201).json({
